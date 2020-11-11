@@ -6,15 +6,6 @@
 #' @keywords internal
 extract_gof <- function(model, fmt, gof_map, ...) {
 
-  # define gof_map if not supplied
-  if (is.null(gof_map)) {
-    gof_map <- modelsummary::gof_map
-    if (isTRUE(inherits(model, "lm"))) {
-      gof_map$clean[gof_map$raw == "statistic"] <- "F"
-      gof_map$omit[gof_map$raw == "statistic"] <- FALSE
-    }
-  }
-
   # extract gof from model object
   gof <- generics::glance(model, ...)
 
@@ -27,9 +18,23 @@ extract_gof <- function(model, fmt, gof_map, ...) {
     }
   }
 
-  # drop if gof_map$omit == TRUE
-  bad <- gof_map$raw[gof_map$omit]
-  gof <- gof[setdiff(colnames(gof), bad)]
+  # define gof_map if not supplied
+  if (is.null(gof_map)) {
+    gof_map <- modelsummary::gof_map
+    if (isTRUE(inherits(model, "lm"))) {
+      gof_map$clean[gof_map$raw == "statistic"] <- "F"
+      gof_map$omit[gof_map$raw == "statistic"] <- FALSE
+    }
+
+    # drop if gof_map$omit == TRUE
+    bad <- gof_map$raw[gof_map$omit]
+    gof <- gof[setdiff(colnames(gof), bad)]
+  }
+  else {
+    # keep only if gof_map$omit == FALSE
+    good <- gof_map$raw[!gof_map$omit]
+    gof <- gof[intersect(colnames(gof), good)]
+  }
 
   # re-order gof columns
   idx1 <- intersect(gof_map$raw, colnames(gof))
